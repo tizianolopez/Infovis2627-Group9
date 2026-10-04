@@ -1,17 +1,43 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Task 1 explanation</title>
   <link rel="stylesheet" href="assets/student.css">
 </head>
+
 <body>
   <main class="explanation-page" id="main-content">
     <h1>Task 1 explanation</h1>
     <div id="explanation-text">
-      <p>Replace this text with your 200–300 word explanation.</p>
+      <h2>Data</h2>
+      <p>The dataset has 54,954 traffic accidents recorded by Barcelona's Guàrdia Urbana between 2019 and 2025.
+        It is real recorded data, complete to 31 December 2025 and published once a year, so it needs to be yearly
+        refreshed.
+        Most fields are categorical (district, severity, pedestrian cause) or discrete counts with a true zero (victims,
+        vehicles). Hour of the day is a discrete interval value with a cyclic order.</p>
+      <h2>Message</h2>
+      <p>For a general audience interested in road safety, the exploration shows one message: the busiest hours are not
+        the most dangerous ones.
+        Between 00:00 and 06:00 there are about six times fewer accidents than between 12:00 and 18:00; yet 4.2% of them
+        are grave or fatal, against 2.2% in the afternoon.
+        The peak is at 05.00h: 6.2% of 501 accidents, while 14h is the busiest hour 2ith 4,098 accidents and 2.2%.
+      </p>
+      <h2>Visualization</h2>
+      <p> Hour is cyclic, so a radial layout is appropriate for displaying the data.
+        The bar length encodes the number of accidents and a single-hue sequential color encodes the share of grave or
+        fatal accidents, because the share has an order but no meaningful midpoint. We kept 24 hourly bins, pooled over
+        seven years, and one decimal for percentages.
+      </p>
+      <h2>Caveats</h2>
+      <p> Night hours have fewer accidents, their percentages are noisier.
+        Radial bars exaggerate outer values, so counts are also shown in the labels.
+        Blank injury counts in 2024-2025 were converted to zero, a zero by convention rather than a real one.
+      </p>
     </div>
   </main>
 </body>
+
 </html>

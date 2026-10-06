@@ -1,50 +1,249 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Infovis 2627 — Group X</title>
+  <title>Infovis 2627 — Group 9</title>
   <style>
     :root {
       color-scheme: light;
+      --ink: #172033;
+      --muted: #475569;
+      --line: #e2e8f0;
+      --accent: #2563eb;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color: #172033;
-      background: #f5f7fb;
+    }
+
+    * {
+      box-sizing: border-box;
     }
 
     body {
       margin: 0;
       min-height: 100vh;
-      display: grid;
-      place-items: center;
+      background: #f5f7fb;
+      color: var(--ink);
+    }
+
+    .hero {
+      padding: 3rem 1.5rem 2rem;
+      text-align: center;
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .hero h1 {
+      margin: 0 0 0.75rem;
+      color: var(--accent);
+    }
+
+    .hero p {
+      margin: 0.25rem 0;
+      color: var(--muted);
+      line-height: 1.6;
     }
 
     main {
-      width: min(720px, calc(100% - 2rem));
-      padding: 3rem 2rem;
+      width: min(800px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 2rem 0 4rem;
+    }
+
+    .task-card {
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto 2rem;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 0.75rem;
+      box-shadow: 0 0.5rem 1.5rem rgba(23, 32, 51, 0.06);
+      overflow: hidden;
+    }
+
+    .task-title {
+      margin: 0;
+      padding: 0.9rem 1.25rem;
+      font-size: 1.2rem;
+      line-height: 1.3;
+      background: #f8fafc;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .view-toggle {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.9rem 1rem;
+    }
+
+    .toggle-btn {
+      font: inherit;
+      font-size: 0.95rem;
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      color: var(--muted);
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+
+    .toggle-btn:hover:not(:disabled):not(.is-active) {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .toggle-btn.is-active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .toggle-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .toggle-btn:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .task-frame {
+      border-top: 1px solid var(--line);
+    }
+
+    .task-frame iframe {
+      display: block;
+      width: 800px;
+      max-width: 100%;
+      height: 440px;
+      border: 0;
+      background: #fff;
+    }
+
+    .placeholder {
+      margin: 0;
+      padding: 2rem 1rem;
       text-align: center;
-      background: white;
-      border: 1px solid #e2e8f0;
-      border-radius: 1rem;
-      box-shadow: 0 1rem 3rem rgba(23, 32, 51, 0.08);
+      color: #94a3b8;
+      font-size: 0.95rem;
     }
 
-    h1 {
-      margin-top: 0;
-      color: #2563eb;
-    }
-
-    p {
-      line-height: 1.6;
-      color: #475569;
+    .is-hidden {
+      display: none !important;
     }
   </style>
 </head>
+
 <body>
-  <main>
-    <h1>Infovis 2627 — Group X</h1>
+  <header class="hero">
+    <h1>Infovis 2627 — Group 9</h1>
     <p>Welcome to our repository for the Presentation and Visualization classes.</p>
-    <p>Our projects, presentations, and visualizations will be published here.</p>
-  </main>
+    <p>Use the buttons on each task card to switch between its visualisation and its explanation.</p>
+  </header>
+
+  <main id="tasks" aria-label="Task list"></main>
+
+  <template id="task-template">
+    <section class="task-card">
+      <h2 class="task-title"></h2>
+      <div class="view-toggle" role="group">
+        <button type="button" class="toggle-btn" data-view="visualisation">Visualisation</button>
+        <button type="button" class="toggle-btn" data-view="explanation">Explanation</button>
+      </div>
+      <div class="task-frame">
+        <iframe class="is-hidden" loading="lazy"></iframe>
+        <p class="placeholder">Loading…</p>
+      </div>
+    </section>
+  </template>
+
+  <script>
+    const FIRST_TASK = 1;
+    const LAST_TASK = 10;
+
+    const taskList = document.getElementById('tasks');
+    const template = document.getElementById('task-template');
+
+    const pad = (n) => String(n).padStart(2, '0');
+
+    const VIEWS = [
+      { view: 'visualisation', label: 'Visualisation', file: (id) => `task${id}.html` },
+      { view: 'explanation', label: 'Explanation', file: (id) => `task${id}-explanation.html` }
+    ];
+
+    // Check whether a task file has been published yet. If the check itself is
+    // unavailable (e.g. the page is opened directly from disk), assume it exists.
+    async function fileExists(url) {
+      try {
+        const response = await fetch(url, { method: 'HEAD', cache: 'no-store' });
+        return response.ok;
+      } catch (error) {
+        return true;
+      }
+    }
+
+    function buildTask(number) {
+      const id = pad(number);
+      const node = template.content.cloneNode(true);
+      const card = node.querySelector('.task-card');
+      const buttons = Array.from(card.querySelectorAll('.toggle-btn'));
+      const frame = card.querySelector('.task-frame iframe');
+      const placeholder = card.querySelector('.placeholder');
+
+      card.querySelector('.task-title').textContent = `Task ${number}`;
+      taskList.appendChild(node);
+
+      const availability = new Map();
+
+      function show(view) {
+        buttons.forEach((button) => {
+          const active = button.dataset.view === view;
+          button.classList.toggle('is-active', active);
+          button.setAttribute('aria-pressed', String(active));
+        });
+
+        const source = VIEWS.find((entry) => entry.view === view);
+        frame.title = `Task ${number} ${source.label.toLowerCase()}`;
+
+        if (availability.get(view)) {
+          frame.src = source.file(id);
+          frame.classList.remove('is-hidden');
+          placeholder.classList.add('is-hidden');
+        } else {
+          frame.removeAttribute('src');
+          frame.classList.add('is-hidden');
+          placeholder.textContent = `${source.label} not published yet.`;
+          placeholder.classList.remove('is-hidden');
+        }
+      }
+
+      Promise.all(
+        VIEWS.map(async ({ view, file }) => {
+          availability.set(view, await fileExists(file(id)));
+        })
+      ).then(() => {
+        buttons.forEach((button) => {
+          button.disabled = !availability.get(button.dataset.view);
+          button.addEventListener('click', () => show(button.dataset.view));
+        });
+
+        const preferred = VIEWS.find(({ view }) => availability.get(view));
+        if (preferred) {
+          show(preferred.view);
+        } else {
+          placeholder.textContent = 'Not published yet.';
+        }
+      });
+    }
+
+    for (let task = FIRST_TASK; task <= LAST_TASK; task += 1) {
+      buildTask(task);
+    }
+  </script>
 </body>
+
 </html>
